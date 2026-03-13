@@ -1,7 +1,7 @@
 // src/lib/db-queries.ts
 // Notes, Media, Profile — Postgres CRUD funksiyalari
 
-import { sql } from './db'
+import { dbSql as sql } from './db'
 import { Note, MediaItem } from '@/types'
 
 // ── NOTES ─────────────────────────────────────────────────────────────────────

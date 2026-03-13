@@ -35,9 +35,18 @@ const AI_REPLIES = [
 ]
 
 const PANELS = [
-  { id: 'notes',   icon: '✏️', label: 'Eslatmalar', key: 'notes',  color: '#3b82f6' },
-  { id: 'library', icon: '📚', label: 'Arxiv',       key: 'total',  color: '#22d3ee' },
-  { id: 'media',   icon: '🖼️', label: 'Media',       key: 'images', color: '#10b981' },
+  {
+    id: 'notes', key: 'notes', color: '#3b82f6', label: 'Eslatmalar',
+    icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10,9 9,9 8,9"/></svg>,
+  },
+  {
+    id: 'library', key: 'total', color: '#22d3ee', label: 'Arxiv',
+    icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>,
+  },
+  {
+    id: 'media', key: 'images', color: '#10b981', label: 'Media',
+    icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21,15 16,10 5,21"/></svg>,
+  },
 ]
 
 // Seed memories from RIBBON_ITEMS
@@ -67,6 +76,10 @@ export default function HomePage() {
   const pausedRef     = useRef(false)
   const fileRef       = useRef<HTMLInputElement>(null)
   const memFileRef    = useRef<HTMLInputElement>(null)
+  // Touch drag
+  const touchStartX   = useRef(0)
+  const touchLastPos  = useRef(0)
+  const isDragging    = useRef(false)
 
   useEffect(() => { setStats(getStats()) }, [setStats])
 
@@ -231,10 +244,7 @@ export default function HomePage() {
     <div
       style={{ flexShrink:0, cursor:'pointer', userSelect:'none' }}
       onClick={() => showToast(m.label)}
-      onMouseEnter={() => { pausedRef.current = true }}
-      onMouseLeave={() => { pausedRef.current = false }}
-      onTouchStart={() => { pausedRef.current = true }}
-      onTouchEnd={() => { setTimeout(() => { pausedRef.current = false }, 1500) }}
+
     >
       <div style={{
         width: 76, height: 104,
@@ -405,8 +415,63 @@ export default function HomePage() {
         <div style={{ position:'absolute', left:0, top:0, bottom:0, width:28, background:'linear-gradient(90deg,var(--bg),transparent)', zIndex:3, pointerEvents:'none' }} />
         <div style={{ position:'absolute', right:0, top:0, bottom:0, width:28, background:'linear-gradient(-90deg,var(--bg),transparent)', zIndex:3, pointerEvents:'none' }} />
 
-        <div style={{ paddingLeft:12, paddingRight:12 }}>
-          <div ref={trackRef} style={{ display:'flex', gap:10, width:'max-content', willChange:'transform' }}>
+        <div
+          style={{ paddingLeft:12, paddingRight:12, cursor:'grab', userSelect:'none' }}
+          onTouchStart={e => {
+            isDragging.current = true
+            touchStartX.current = e.touches[0].clientX
+            touchLastPos.current = posRef.current
+            pausedRef.current = true
+          }}
+          onTouchMove={e => {
+            if (!isDragging.current) return
+            const dx = touchStartX.current - e.touches[0].clientX
+            const track = trackRef.current
+            if (!track) return
+            const half = track.scrollWidth / 2
+            let next = touchLastPos.current + dx
+            if (next < 0) next += half
+            if (next >= half) next -= half
+            posRef.current = next
+            track.style.transform = `translateX(-${next.toFixed(2)}px)`
+          }}
+          onTouchEnd={() => {
+            isDragging.current = false
+            setTimeout(() => { pausedRef.current = false }, 2000)
+          }}
+          onMouseDown={e => {
+            isDragging.current = true
+            touchStartX.current = e.clientX
+            touchLastPos.current = posRef.current
+            pausedRef.current = true
+            ;(e.currentTarget as HTMLElement).style.cursor = 'grabbing'
+          }}
+          onMouseMove={e => {
+            if (!isDragging.current) return
+            const dx = touchStartX.current - e.clientX
+            const track = trackRef.current
+            if (!track) return
+            const half = track.scrollWidth / 2
+            let next = touchLastPos.current + dx
+            if (next < 0) next += half
+            if (next >= half) next -= half
+            posRef.current = next
+            track.style.transform = `translateX(-${next.toFixed(2)}px)`
+          }}
+          onMouseUp={e => {
+            isDragging.current = false
+            ;(e.currentTarget as HTMLElement).style.cursor = 'grab'
+            setTimeout(() => { pausedRef.current = false }, 1500)
+          }}
+          onMouseLeave={e => {
+            if (isDragging.current) {
+              isDragging.current = false
+              ;(e.currentTarget as HTMLElement).style.cursor = 'grab'
+            }
+            pausedRef.current = false
+          }}
+        >
+          <div ref={trackRef} style={{ display:'flex', gap:10, width:'max-content', willChange:'transform', pointerEvents: isDragging.current ? 'none' : 'auto' }}>
             {doubled.map((m, i) => <MemCard key={i} m={m} />)}
           </div>
         </div>

@@ -1,36 +1,54 @@
 // src/lib/users.ts
-// Foydalanuvchilarni saqlash — Vercel /tmp da (yoki in-memory fallback)
-// Production uchun: bu yerga real DB (Postgres, MongoDB) ulang
+// Foydalanuvchilar — Vercel Postgres da saqlanadi
 
-import fs   from 'fs'
-import path from 'path'
-
-const DATA_DIR  = '/tmp'
-const USERS_FILE = path.join(DATA_DIR, 'lv_users.json')
+import { sql } from './db'
 
 export interface StoredUser {
-  email:        string
-  name:         string
-  salt:         string
-  passwordHash: string
-  joined:       string
-  createdAt:    number
+  email:         string
+  name:          string
+  salt:          string
+  password_hash: string
+  joined:        string
 }
 
-export function getUsers(): StoredUser[] {
+export async function findUserByEmail(email: string): Promise<StoredUser | null> {
   try {
-    if (!fs.existsSync(USERS_FILE)) return []
-    const raw = fs.readFileSync(USERS_FILE, 'utf-8')
-    return JSON.parse(raw)
-  } catch {
-    return []
-  }
-}
-
-export function saveUsers(users: StoredUser[]): void {
-  try {
-    fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2), 'utf-8')
+    const result = await sql<StoredUser>`
+      SELECT email, name, salt, password_hash, joined
+      FROM users WHERE email = ${email.toLowerCase().trim()} LIMIT 1
+    `
+    return result.rows[0] ?? null
   } catch (e) {
-    console.error('saveUsers error:', e)
+    console.error('findUserByEmail:', e)
+    return null
   }
+}
+
+export async function createUser(u: {
+  email: string; name: string; salt: string; passwordHash: string; joined: string
+}): Promise<StoredUser | null> {
+  try {
+    const result = await sql<StoredUser>`
+      INSERT INTO users (email, name, salt, password_hash, joined)
+      VALUES (${u.email.toLowerCase().trim()}, ${u.name.trim()}, ${u.salt}, ${u.passwordHash}, ${u.joined})
+      RETURNING email, name, salt, password_hash, joined
+    `
+    // Empty profile yaratish
+    await sql`
+      INSERT INTO profiles (user_email, bio, skills)
+      VALUES (${u.email.toLowerCase().trim()}, '', '[]')
+      ON CONFLICT DO NOTHING
+    `
+    return result.rows[0] ?? null
+  } catch (e) {
+    console.error('createUser:', e)
+    return null
+  }
+}
+
+export async function userExists(email: string): Promise<boolean> {
+  try {
+    const r = await sql`SELECT 1 FROM users WHERE email = ${email.toLowerCase().trim()} LIMIT 1`
+    return (r.rowCount ?? 0) > 0
+  } catch { return false }
 }

@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useAppStore } from '@/hooks/useAppStore'
 import { showToast } from '@/components/ui/Toast'
-import { saveNote, saveMedia, getStats } from '@/lib/storage'
+import { pushNote, pushMedia, loadStats } from '@/lib/sync'
+import { getStats } from '@/lib/storage'
 import { RIBBON_ITEMS } from '@/lib/data'
 
 interface Msg { type: 'ai' | 'user'; text: string }
@@ -87,7 +88,7 @@ export default function HomePage() {
     setMsgs(p => [...p, { type: 'user', text }])
     setSending(true)
     if (cat === 'note' || cat === 'ai') {
-      saveNote({ id: Date.now().toString(), title: text.slice(0,60), pre: text.slice(0,80), tag: 'Eslatma', date: 'Hozir', content: text })
+      pushNote({ id: Date.now().toString(), title: text.slice(0,60), pre: text.slice(0,80), tag: 'Eslatma', date: 'Hozir', content: text })
     }
     setStats(getStats())
     setTimeout(() => {
@@ -105,7 +106,7 @@ export default function HomePage() {
     if (!files?.length) return
     e.target.value = ''
     Array.from(files).forEach(file => {
-      saveMedia({ id: Date.now().toString()+Math.random(), emoji: file.type.startsWith('video') ? '🎬' : '🖼', title: file.name, date: new Date().toLocaleDateString(), type: file.type.startsWith('video') ? 'video' : 'rasm', color: '#111827' })
+      pushMedia({ id: Date.now().toString()+Math.random(), emoji: file.type.startsWith('video') ? '🎬' : '🖼', title: file.name, date: new Date().toLocaleDateString(), type: file.type.startsWith('video') ? 'video' : 'rasm', color: '#111827' })
     })
     setStats(getStats())
     showToast(`${files.length} ta fayl saqlandi`)

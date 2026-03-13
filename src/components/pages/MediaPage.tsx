@@ -2,7 +2,8 @@
 // src/components/pages/MediaPage.tsx
 import { useState, useEffect, useRef } from 'react'
 import { showToast } from '@/components/ui/Toast'
-import { getMedia, saveMedia, getStats } from '@/lib/storage'
+import { loadMedia, pushMedia } from '@/lib/sync'
+import { getStats } from '@/lib/storage'
 import { SEED_MEDIA } from '@/lib/data'
 import { MediaItem } from '@/types'
 import { useAppStore } from '@/hooks/useAppStore'
@@ -16,8 +17,7 @@ export default function MediaPage() {
   const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    const saved = getMedia()
-    setItems([...SEED_MEDIA, ...saved])
+    loadMedia().then(saved => { setItems([...SEED_MEDIA, ...saved]) })
   }, [])
 
   function onFiles(e: React.ChangeEvent<HTMLInputElement>) {
@@ -33,7 +33,7 @@ export default function MediaPage() {
       type:  file.type.startsWith('video') ? 'video' : 'rasm',
       color: '#0f1b3a',
     }))
-    newItems.forEach(saveMedia)
+    newItems.forEach(pushMedia)
     setItems(prev => [...newItems, ...prev])
     setStats(getStats())
   }

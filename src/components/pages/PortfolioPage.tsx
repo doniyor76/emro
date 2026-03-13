@@ -4,7 +4,7 @@ import { showToast } from '@/components/ui/Toast'
 import { useState, useEffect } from 'react'
 import { useAppStore } from '@/hooks/useAppStore'
 
-import { getSkills, setSkills as saveSkills, getBio, setBio as saveBio } from '@/lib/storage'
+import { loadProfile, pushProfile } from '@/lib/sync'
 
 type PfTab = 'skills' | 'ach' | 'projects'
 
@@ -16,8 +16,7 @@ export default function PortfolioPage() {
   const [bio, setBioState]      = useState('')
 
   useEffect(() => {
-    setSkillsState(getSkills())
-    setBioState(getBio())
+    loadProfile().then(p => { setSkillsState(p.skills); setBioState(p.bio) })
   }, [])
 
   function addSkill() {
@@ -25,18 +24,18 @@ export default function PortfolioPage() {
     if (s?.trim()) {
       const updated = [...skills, s.trim()]
       setSkillsState(updated)
-      saveSkills(updated)
+      pushProfile({ skills: updated })
     }
   }
 
   function removeSkill(s: string) {
     const updated = skills.filter(x => x !== s)
     setSkillsState(updated)
-    saveSkills(updated)
+    pushProfile({ skills: updated })
   }
 
   function saveBioLocal() {
-    saveBio(bio)
+    pushProfile({ bio })
     setEditingBio(false)
   }
 

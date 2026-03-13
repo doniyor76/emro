@@ -66,7 +66,7 @@ export function setSkills(s: string[]) { set('skills', s) }
 
 // ── Bio ────────────────────────────────────────────────────
 export function getBio(): string {
-  return get<string>('bio', "LifeVault foydalanuvchisi. Xotiralar, yutuqlar va ko'nikmalar shu yerda saqlanadi.")
+  return get<string>('bio', "Emro foydalanuvchisi. Xotiralar, yutuqlar va ko'nikmalar shu yerda saqlanadi.")
 }
 export function setBio(bio: string) { set('bio', bio) }
 

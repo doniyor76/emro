@@ -4,7 +4,7 @@ import { MemoryItem, MediaItem, BookItem, Note } from '@/types'
 export const SEED_NOTES: Note[] = [
   { id: 'seed-1', title: "Python — O'rganish rejasi", pre: '1-hafta: Asoslar, sintaksis...', tag: 'Reja',   date: 'Bugun',  content: "# Python O'rganish Rejasi\n\n## 1-hafta: Asoslar\n- Sintaksis va o'zgaruvchilar\n- Funksiyalar va looplar\n\n## 2-hafta: OOP\n- Klasslar va ob'ektlar\n- Meros (inheritance)" },
   { id: 'seed-2', title: 'Hayot maqsadlarim 2025',   pre: "Sog'lom turmush, yangi til...",  tag: 'Maqsad', date: 'Kecha',  content: "## 2025 yil maqsadlarim\n\n1. Sog'lom turmush tarzi\n2. Yangi til o'rganish\n3. Loyihani yakunlash" },
-  { id: 'seed-3', title: "LifeVault loyiha g'oyalari", pre: 'AI xotira, portfolio, resume...', tag: 'Loyiha', date: '3 kun', content: "## G'oyalar\n\n- AI xotira vault\n- Portfolio generator\n- Resume builder" },
+  { id: 'seed-3', title: "Emro loyiha g'oyalari", pre: 'AI xotira, portfolio, resume...', tag: 'Loyiha', date: '3 kun', content: "## G'oyalar\n\n- AI xotira vault\n- Portfolio generator\n- Resume builder" },
   { id: 'seed-4', title: 'Kitob tavsiyalari',         pre: 'Atomic Habits, Deep Work...',   tag: 'Kitob',  date: '1 hafta', content: "## Kitoblar\n\n- Atomic Habits\n- Deep Work\n- The Lean Startup" },
 ]
 
@@ -29,7 +29,7 @@ export const BOOKS: BookItem[] = [
 ]
 
 export const RIBBON_ITEMS = [
-  { emoji: '🏔️', label: "Tog' safari",   color: '#1a3a5c', accent: '#4f8ef7' },
+  { emoji: '🏔️', label: "Tog' safari",   color: '#1a3a5c', accent: '#3b82f6' },
   { emoji: '🎂', label: "Tug'ilgan kun", color: '#3a1a2c', accent: '#f74f8e' },
   { emoji: '🎬', label: 'Kino kechasi',  color: '#1a2a3a', accent: '#4fc3f7' },
   { emoji: '🏆', label: 'Olimpiada',     color: '#3a2a0a', accent: '#f7c34f' },

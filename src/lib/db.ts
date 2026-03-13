@@ -2,7 +2,8 @@
 // PostgreSQL wrapper — pg paketi, to'liq TypeScript support
 // POSTGRES_URL bo'lmasa /tmp fallback ishlaydi
 
-import { Pool, QueryResult } from 'pg'
+import { Pool } from 'pg'
+
 
 let pool: Pool | null = null
 
@@ -41,8 +42,8 @@ export async function dbSql<T = Record<string, unknown>>(
   })
 
   try {
-    const result: QueryResult<T> = await db.query(text, values as unknown[])
-    return { rows: result.rows, rowCount: result.rowCount ?? 0 }
+    const result = await db.query(text, values)
+    return { rows: result.rows as T[], rowCount: result.rowCount ?? 0 }
   } catch (e) {
     console.error('DB error:', e)
     return { rows: [], rowCount: 0 }

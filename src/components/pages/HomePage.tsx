@@ -42,31 +42,61 @@ export default function HomePage() {
   const [sending, setSending] = useState(false)
   const [chatFull, setChatFull] = useState(false)
 
-  const chatRef  = useRef<HTMLDivElement>(null)
-  const taRef    = useRef<HTMLTextAreaElement>(null)
-  const trackRef = useRef<HTMLDivElement>(null)
-  const animRef  = useRef(0)
-  const posRef   = useRef(0)
-  const fileRef  = useRef<HTMLInputElement>(null)
+  const chatRef    = useRef<HTMLDivElement>(null)
+  const taRef      = useRef<HTMLTextAreaElement>(null)
+  const trackRef   = useRef<HTMLDivElement>(null)
+  const animRef    = useRef(0)
+  const posRef     = useRef(0)
+  const pausedRef  = useRef(false)
+  const fileRef    = useRef<HTMLInputElement>(null)
+  const ribbonFileRef = useRef<HTMLInputElement>(null)
 
-  const ribbon = [...RIBBON_ITEMS, ...RIBBON_ITEMS]
+  // User uploaded ribbon items (rasmlari)
+  const [userMemories, setUserMemories] = useState<Array<{ id: string; label: string; src: string; color: string }>>([])
+
+  const ribbonItems = [...RIBBON_ITEMS, ...RIBBON_ITEMS]
 
   useEffect(() => { setStats(getStats()) }, [setStats])
 
-  // Ribbon scroll
+  // Ribbon: uzluksiz scroll, hover da to'xtash
   useEffect(() => {
     const track = trackRef.current
     if (!track) return
+    let speed = 0.6
+
     const tick = () => {
-      posRef.current += 0.5
-      const half = track.scrollWidth / 2
-      if (posRef.current >= half) posRef.current -= half
-      track.style.transform = `translateX(-${posRef.current}px)`
+      if (!pausedRef.current) {
+        posRef.current += speed
+        const half = track.scrollWidth / 2
+        if (posRef.current >= half) posRef.current -= half
+        track.style.transform = `translateX(-${posRef.current.toFixed(2)}px)`
+      }
       animRef.current = requestAnimationFrame(tick)
     }
     animRef.current = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(animRef.current)
-  }, [])
+  }, [userMemories])
+
+  function handleRibbonUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files
+    if (!files?.length) return
+    e.target.value = ''
+    Array.from(files).forEach(file => {
+      const reader = new FileReader()
+      reader.onload = ev => {
+        const src = ev.target?.result as string
+        const label = file.name.replace(/\.[^.]+$/, '').slice(0, 18)
+        setUserMemories(prev => [...prev, {
+          id: Date.now().toString() + Math.random(),
+          label,
+          src,
+          color: ['#1a2a5c','#1a0f2e','#0a1f30','#1a100f','#0f2a1a'][Math.floor(Math.random()*5)]
+        }])
+        showToast('Xotiraga qo\'shildi!')
+      }
+      reader.readAsDataURL(file)
+    })
+  }
 
   useEffect(() => {
     if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight
@@ -225,20 +255,53 @@ export default function HomePage() {
 
       {/* Ribbon */}
       <div style={{ flexShrink:0, padding:'12px 0 8px' }}>
-        <div style={{ fontSize:'0.62rem', color:'var(--text3)', letterSpacing:'0.12em', textTransform:'uppercase', fontFamily:'var(--font-mono)', padding:'0 16px', marginBottom:8 }}>
-          Xotiralar
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 16px', marginBottom:10 }}>
+          <span style={{ fontSize:'0.6rem', color:'var(--text3)', letterSpacing:'0.14em', textTransform:'uppercase', fontFamily:'var(--font-mono)' }}>
+            Xotiralar
+          </span>
+          <button
+            onClick={() => ribbonFileRef.current?.click()}
+            style={{ display:'flex', alignItems:'center', gap:5, padding:'4px 10px', borderRadius:20, background:'rgba(59,130,246,0.08)', border:'1px solid var(--border-accent)', cursor:'pointer', fontSize:'0.68rem', color:'var(--accent2)', fontFamily:'var(--font)', fontWeight:500 }}>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Rasm qo'shish
+          </button>
+          <input ref={ribbonFileRef} type="file" accept="image/*,video/*" multiple onChange={handleRibbonUpload} style={{ display:'none' }} />
         </div>
+
         <div style={{ position:'relative', overflow:'hidden' }}>
-          <div style={{ position:'absolute', left:0, top:0, bottom:0, width:24, background:'linear-gradient(90deg,var(--bg),transparent)', zIndex:2, pointerEvents:'none' }} />
-          <div style={{ position:'absolute', right:0, top:0, bottom:0, width:24, background:'linear-gradient(-90deg,var(--bg),transparent)', zIndex:2, pointerEvents:'none' }} />
-          <div style={{ paddingLeft:16 }}>
-            <div ref={trackRef} style={{ display:'flex', gap:8, width:'max-content', willChange:'transform' }}>
-              {ribbon.map((m, i) => (
-                <div key={i} onClick={() => showToast(m.label)} style={{ flexShrink:0, cursor:'pointer' }}>
-                  <div style={{ width:58, height:80, borderRadius:12, background:`linear-gradient(160deg,${m.color},#080c14)`, border:'1px solid var(--border)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:22 }}>
+          {/* Edge fades */}
+          <div style={{ position:'absolute', left:0, top:0, bottom:0, width:32, background:'linear-gradient(90deg,var(--bg),transparent)', zIndex:2, pointerEvents:'none' }} />
+          <div style={{ position:'absolute', right:0, top:0, bottom:0, width:32, background:'linear-gradient(-90deg,var(--bg),transparent)', zIndex:2, pointerEvents:'none' }} />
+
+          <div style={{ paddingLeft:16, paddingRight:16 }}>
+            <div
+              ref={trackRef}
+              style={{ display:'flex', gap:10, width:'max-content', willChange:'transform' }}
+              onMouseEnter={() => { pausedRef.current = true }}
+              onMouseLeave={() => { pausedRef.current = false }}
+              onTouchStart={() => { pausedRef.current = true }}
+              onTouchEnd={() => { setTimeout(() => { pausedRef.current = false }, 1200) }}
+            >
+              {/* User uploaded memories first */}
+              {[...userMemories, ...userMemories].map((m, i) => (
+                <div key={'u'+i} style={{ flexShrink:0, cursor:'pointer' }} onClick={() => showToast(m.label)}>
+                  <div style={{ width:72, height:96, borderRadius:14, overflow:'hidden', border:'1px solid var(--border)', position:'relative', background:'#080c14' }}>
+                    <img src={m.src} alt={m.label} style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }} />
+                    <div style={{ position:'absolute', inset:0, background:'linear-gradient(to top,rgba(0,0,0,0.5) 0%,transparent 60%)' }} />
+                  </div>
+                  <div style={{ fontSize:'0.6rem', color:'var(--text2)', textAlign:'center', marginTop:5, width:72, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', fontWeight:500 }}>{m.label}</div>
+                </div>
+              ))}
+
+              {/* Default ribbon items */}
+              {ribbonItems.map((m, i) => (
+                <div key={'d'+i} onClick={() => showToast(m.label)} style={{ flexShrink:0, cursor:'pointer' }}
+                  onMouseEnter={e => { (e.currentTarget.firstChild as HTMLElement).style.transform = 'scale(1.04)' }}
+                  onMouseLeave={e => { (e.currentTarget.firstChild as HTMLElement).style.transform = 'scale(1)' }}>
+                  <div style={{ width:72, height:96, borderRadius:14, background:`linear-gradient(160deg,${m.color},#080c14)`, border:'1px solid var(--border)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:30, transition:'transform 0.2s ease', flexShrink:0 }}>
                     {m.emoji}
                   </div>
-                  <div style={{ fontSize:'0.58rem', color:'var(--text3)', textAlign:'center', marginTop:4, width:58, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{m.label}</div>
+                  <div style={{ fontSize:'0.6rem', color:'var(--text2)', textAlign:'center', marginTop:5, width:72, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', fontWeight:500 }}>{m.label}</div>
                 </div>
               ))}
             </div>

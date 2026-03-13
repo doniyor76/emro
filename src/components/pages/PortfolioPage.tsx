@@ -1,8 +1,9 @@
 'use client'
+import { showToast } from '@/components/ui/Toast'
 // src/components/pages/PortfolioPage.tsx
 import { useState, useEffect } from 'react'
 import { useAppStore } from '@/hooks/useAppStore'
-import { showToast }   from '@/components/ui/Toast'
+
 import { getSkills, setSkills as saveSkills, getBio, setBio as saveBio } from '@/lib/storage'
 
 type PfTab = 'skills' | 'ach' | 'projects'
@@ -48,28 +49,28 @@ export default function PortfolioPage() {
   return (
     <div style={{ height: '100%', overflowY: 'auto' }}>
       {/* Cover */}
-      <div style={{ height: 140, background: 'linear-gradient(135deg,#0f1b3a,#1a0f2e,#0a1f30)', position: 'relative', flexShrink: 0 }}>
-        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(0,212,255,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,0.04) 1px,transparent 1px)', backgroundSize: '28px 28px' }} />
+      <div style={{ height: 140, background: 'var(--bg2)', position: 'relative', flexShrink: 0 }}>
+        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(59,130,246,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(59,130,246,0.04) 1px,transparent 1px)', backgroundSize: '28px 28px' }} />
       </div>
 
       <div style={{ padding: '0 20px 80px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: -36, marginBottom: 14 }}>
-          <div style={{ width: 80, height: 80, borderRadius: 20, background: 'linear-gradient(135deg,var(--blue),var(--cyan))', display: 'grid', placeItems: 'center', fontSize: '1.8rem', fontWeight: 700, border: '3px solid var(--bg)', boxShadow: '0 0 30px rgba(0,212,255,0.3)', color: '#fff', cursor: 'pointer' }}>
+          <div style={{ width: 80, height: 80, borderRadius: 20, background: 'linear-gradient(135deg,var(--accent),var(--accent2))', display: 'grid', placeItems: 'center', fontSize: '1.8rem', fontWeight: 700, border: '3px solid var(--bg)', boxShadow: '0 0 30px rgba(59,130,246,0.3)', color: '#fff', cursor: 'pointer' }}>
             {user?.initial || 'U'}
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={() => showToast('🔗 Link nusxalandi!')} style={{ padding: '7px 14px', borderRadius: 8, background: 'transparent', border: '1px solid rgba(0,212,255,0.2)', color: 'var(--text2)', fontSize: '0.8rem', cursor: 'pointer' }}>🔗 Ulashish</button>
-            <button onClick={() => setEditingBio(!editingBio)} style={{ padding: '7px 14px', borderRadius: 8, background: 'linear-gradient(135deg,var(--blue),var(--cyan))', border: 'none', color: '#fff', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 600 }}>✏️ Tahrirlash</button>
+            <button onClick={() => showToast('🔗 Link nusxalandi!')} style={{ padding: '7px 14px', borderRadius: 8, background: 'transparent', border: '1px solid rgba(59,130,246,0.2)', color: 'var(--text2)', fontSize: '0.8rem', cursor: 'pointer' }}>🔗 Ulashish</button>
+            <button onClick={() => setEditingBio(!editingBio)} style={{ padding: '7px 14px', borderRadius: 8, background: 'linear-gradient(135deg,var(--accent),var(--accent2))', border: 'none', color: '#fff', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 600 }}>✏️ Tahrirlash</button>
           </div>
         </div>
 
-        <div style={{ fontSize: '1.5rem', fontFamily: 'var(--font-display)', fontWeight: 800, marginBottom: 4 }}>{user?.name || 'Foydalanuvchi'}</div>
+        <div style={{ fontSize: '1.5rem', fontFamily: 'var(--font)', fontWeight: 800, marginBottom: 4 }}>{user?.name || 'Foydalanuvchi'}</div>
         <div style={{ fontSize: '0.82rem', color: 'var(--text3)', marginBottom: 10 }}>@{user?.name?.toLowerCase().replace(' ', '') || 'user'} · emro.pro</div>
 
         {editingBio ? (
           <div>
-            <textarea value={bio} onChange={e => setBioState(e.target.value)} autoFocus style={{ width: '100%', background: 'rgba(0,212,255,0.04)', border: '1px solid rgba(0,212,255,0.2)', borderRadius: 10, padding: '10px 12px', color: 'var(--text)', fontSize: '0.86rem', fontFamily: 'var(--font)', outline: 'none', resize: 'none', marginBottom: 8 }} rows={3} />
-            <button onClick={saveBioLocal} style={{ padding: '6px 14px', borderRadius: 8, background: 'linear-gradient(135deg,var(--blue),var(--cyan))', border: 'none', color: '#fff', fontSize: '0.8rem', cursor: 'pointer' }}>Saqlash</button>
+            <textarea value={bio} onChange={e => setBioState(e.target.value)} autoFocus style={{ width: '100%', background: 'rgba(59,130,246,0.04)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: 10, padding: '10px 12px', color: 'var(--text)', fontSize: '0.86rem', fontFamily: 'var(--font)', outline: 'none', resize: 'none', marginBottom: 8 }} rows={3} />
+            <button onClick={saveBioLocal} style={{ padding: '6px 14px', borderRadius: 8, background: 'linear-gradient(135deg,var(--accent),var(--accent2))', border: 'none', color: '#fff', fontSize: '0.8rem', cursor: 'pointer' }}>Saqlash</button>
           </div>
         ) : (
           <p style={{ fontSize: '0.86rem', color: 'var(--text2)', marginBottom: 14, lineHeight: 1.6 }}>{bio}</p>
@@ -80,10 +81,10 @@ export default function PortfolioPage() {
           <span>📅 {user?.joined || new Date().getFullYear()} yildan beri</span>
         </div>
 
-        <div style={{ display: 'flex', gap: 20, marginBottom: 20, padding: '14px 0', borderTop: '1px solid var(--b2)', borderBottom: '1px solid var(--b2)' }}>
+        <div style={{ display: 'flex', gap: 20, marginBottom: 20, padding: '14px 0', borderTop: '1px solid var(--border2)', borderBottom: '1px solid var(--border2)' }}>
           {[{ n: '0', l: 'Xotira' }, { n: '4', l: 'Yutuq' }, { n: `${skills.length}`, l: 'Skill' }].map(s => (
             <div key={s.l} style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '1.5rem', fontWeight: 700, fontFamily: 'var(--font-display)', background: 'linear-gradient(135deg,#fff,var(--cyan))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{s.n}</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 700, fontFamily: 'var(--font)', background: 'linear-gradient(135deg,#fff,var(--accent2))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{s.n}</div>
               <div style={{ fontSize: '0.72rem', color: 'var(--text3)' }}>{s.l}</div>
             </div>
           ))}
@@ -98,9 +99,9 @@ export default function PortfolioPage() {
           <span style={{ color: 'var(--text3)' }}>→</span>
         </div>
 
-        <div style={{ display: 'flex', gap: 4, marginBottom: 16, background: 'rgba(0,212,255,0.04)', border: '1px solid var(--b2)', borderRadius: 10, padding: 4 }}>
+        <div style={{ display: 'flex', gap: 4, marginBottom: 16, background: 'rgba(59,130,246,0.04)', border: '1px solid var(--border2)', borderRadius: 10, padding: 4 }}>
           {(['skills', 'ach', 'projects'] as PfTab[]).map(tab => (
-            <button key={tab} onClick={() => setPfTab(tab)} style={{ flex: 1, padding: '7px 10px', borderRadius: 7, border: 'none', cursor: 'pointer', fontSize: '0.8rem', fontWeight: pfTab === tab ? 600 : 400, background: pfTab === tab ? 'linear-gradient(135deg,var(--blue),var(--cyan))' : 'transparent', color: pfTab === tab ? '#fff' : 'var(--text3)', transition: 'all 0.2s' }}>
+            <button key={tab} onClick={() => setPfTab(tab)} style={{ flex: 1, padding: '7px 10px', borderRadius: 7, border: 'none', cursor: 'pointer', fontSize: '0.8rem', fontWeight: pfTab === tab ? 600 : 400, background: pfTab === tab ? 'linear-gradient(135deg,var(--accent),var(--accent2))' : 'transparent', color: pfTab === tab ? '#fff' : 'var(--text3)', transition: 'all 0.2s' }}>
               {tab === 'skills' ? '💡 Skilllar' : tab === 'ach' ? '🏆 Yutuqlar' : '💼 Loyihalar'}
             </button>
           ))}
@@ -109,9 +110,9 @@ export default function PortfolioPage() {
         {pfTab === 'skills' && (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {skills.map(s => (
-              <span key={s} onClick={() => removeSkill(s)} style={{ padding: '6px 14px', borderRadius: 20, background: 'rgba(0,212,255,0.08)', border: '1px solid rgba(0,212,255,0.2)', color: 'var(--cyan)', fontSize: '0.82rem', cursor: 'pointer' }} title="O'chirish uchun bosing">{s} ×</span>
+              <span key={s} onClick={() => removeSkill(s)} style={{ padding: '6px 14px', borderRadius: 20, background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)', color: 'var(--accent2)', fontSize: '0.82rem', cursor: 'pointer' }} title="O'chirish uchun bosing">{s} ×</span>
             ))}
-            <span onClick={addSkill} style={{ padding: '6px 14px', borderRadius: 20, background: 'rgba(0,212,255,0.04)', border: '1px dashed rgba(0,212,255,0.2)', color: 'var(--text3)', fontSize: '0.82rem', cursor: 'pointer' }}>+ Skill qo&apos;shish</span>
+            <span onClick={addSkill} style={{ padding: '6px 14px', borderRadius: 20, background: 'rgba(59,130,246,0.04)', border: '1px dashed rgba(59,130,246,0.2)', color: 'var(--text3)', fontSize: '0.82rem', cursor: 'pointer' }}>+ Skill qo&apos;shish</span>
           </div>
         )}
 
@@ -123,7 +124,7 @@ export default function PortfolioPage() {
               { icon: '🚀', title: 'Birinchi React ilovam App Store da',       date: '2024 yil Sentyabr' },
               { icon: '🏅', title: "Toshkent Hackathon — 2-o'rin",            date: '2023 yil Noyabr' },
             ].map((a, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 16px', borderRadius: 14, background: 'var(--card)', border: '1px solid var(--b1)' }}>
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 16px', borderRadius: 14, background: 'var(--card)', border: '1px solid var(--border)' }}>
                 <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(245,158,11,0.1)', display: 'grid', placeItems: 'center', fontSize: 20, flexShrink: 0 }}>{a.icon}</div>
                 <div>
                   <div style={{ fontSize: '0.88rem', fontWeight: 500 }}>{a.title}</div>
@@ -137,11 +138,11 @@ export default function PortfolioPage() {
         {pfTab === 'projects' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {[
-              { icon: '🤖', title: 'LifeVault — Personal AI Memory App',        tech: 'React · Node.js · Claude API' },
+              { icon: '🤖', title: 'Emro — Personal AI Memory App',        tech: 'React · Node.js · Claude API' },
               { icon: '🛒', title: 'E-commerce Platform — 500+ foydalanuvchi', tech: 'Next.js · Stripe · MongoDB'    },
             ].map((p, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 16px', borderRadius: 14, background: 'var(--card)', border: '1px solid var(--b1)' }}>
-                <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(0,212,255,0.08)', display: 'grid', placeItems: 'center', fontSize: 20, flexShrink: 0 }}>{p.icon}</div>
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 16px', borderRadius: 14, background: 'var(--card)', border: '1px solid var(--border)' }}>
+                <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(59,130,246,0.08)', display: 'grid', placeItems: 'center', fontSize: 20, flexShrink: 0 }}>{p.icon}</div>
                 <div>
                   <div style={{ fontSize: '0.88rem', fontWeight: 500 }}>{p.title}</div>
                   <div style={{ fontSize: '0.72rem', color: 'var(--text3)', marginTop: 3 }}>{p.tech}</div>

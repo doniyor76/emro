@@ -1,98 +1,103 @@
-/* src/styles/globals.css */
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 
 :root {
-  --bg: #080a0f;
-  --bg2: #0b0e16;
-  --bg3: #0f1220;
-  --card: #10131e;
-  --card2: #131720;
-  --card3: #181c2a;
-  --b1: rgba(0,212,255,0.15);
-  --b2: rgba(0,212,255,0.07);
-  --b3: rgba(0,212,255,0.04);
-  --blue: #4f8ef7;
-  --blue2: #7aaeff;
-  --blue3: #a8c8ff;
-  --cyan: #00d4ff;
-  --cyan2: #40e0ff;
-  --cyan3: #80ecff;
-  --violet: #7c4dff;
-  --violet2: #9c6fff;
-  --gold: #f0a500;
-  --gold2: #f5c048;
-  --green: #00e5a0;
-  --pink: #ff4d9e;
-  --red: #ff4560;
-  --text: #e8eeff;
-  --text2: #6b7aa8;
-  --text3: #3a4260;
-  --glow: rgba(0,212,255,0.35);
-  --bglow: rgba(79,142,247,0.3);
-  --r: 10px;
+  /* Brand */
+  --accent: #3b82f6;
+  --accent2: #60a5fa;
+  --accent-glow: rgba(59,130,246,0.25);
+  --cyan: #22d3ee;
+  --cyan-glow: rgba(34,211,238,0.2);
+  --green: #10b981;
+  --red: #ef4444;
+  --gold: #f59e0b;
+  --violet: #8b5cf6;
+  --pink: #ec4899;
+
+  /* Backgrounds */
+  --bg:   #080c14;
+  --bg2:  #0c1220;
+  --bg3:  #101828;
+  --card: #111827;
+  --card2:#141e2e;
+
+  /* Borders */
+  --border:  rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.04);
+  --border-accent: rgba(59,130,246,0.2);
+
+  /* Text */
+  --text:  #f1f5f9;
+  --text2: #94a3b8;
+  --text3: #475569;
+
+  /* Radius */
+  --r:  10px;
   --r2: 16px;
   --r3: 22px;
-  --font: 'Space Grotesk', sans-serif;
-  --font-display: 'Syne', sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Font */
+  --font:      'Outfit', sans-serif;
+  --font-mono: 'DM Mono', monospace;
 }
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
-html, body { height: 100%; overflow: hidden; }
+body.light {
+  --bg:   #f8faff;
+  --bg2:  #f0f4ff;
+  --bg3:  #e8eeff;
+  --card: #ffffff;
+  --card2:#f5f7ff;
+  --border:  rgba(0,0,0,0.08);
+  --border2: rgba(0,0,0,0.04);
+  --text:  #0f172a;
+  --text2: #475569;
+  --text3: #94a3b8;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html { height: 100%; }
 body {
   font-family: var(--font);
   background: var(--bg);
   color: var(--text);
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-font-smoothing: antialiased;
 }
+#__next, #root { height: 100%; }
 
-body.light {
-  --bg: #f0f2ff;
-  --bg2: #e8eaff;
-  --bg3: #dfe3ff;
-  --card: #ffffff;
-  --card2: #f5f6ff;
-  --card3: #eef0ff;
-  --b1: rgba(88,101,242,0.2);
-  --b2: rgba(88,101,242,0.12);
-  --b3: rgba(88,101,242,0.06);
-  --text: #1a1f3a;
-  --text2: #4a5180;
-  --text3: #9098c0;
-}
-
-::-webkit-scrollbar { width: 3px; height: 3px; }
-::-webkit-scrollbar-thumb { background: rgba(0,212,255,0.3); border-radius: 2px; }
+::-webkit-scrollbar { width: 2px; height: 2px; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
 ::-webkit-scrollbar-track { background: transparent; }
 
-@property --angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
-@keyframes rotateBorder { to { --angle: 360deg; } }
-@keyframes orbFloat { from{transform:translate(0,0)} to{transform:translate(35px,22px)} }
-@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
-@keyframes dropIn { from{opacity:0;transform:translateY(-8px) scale(0.97)} to{opacity:1;transform:translateY(0) scale(1)} }
-@keyframes fadeInUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
-@keyframes toastIn { from{opacity:0;transform:translateX(-50%) translateY(20px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
-@keyframes spin { to{transform:rotate(360deg)} }
-@keyframes pulse {
-  0%,100%{box-shadow:0 0 48px rgba(0,212,255,0.45)}
-  50%{box-shadow:0 0 72px rgba(0,212,255,0.75)}
-}
+/* Animations — clean, not cartoonish */
+@keyframes fadeUp   { from { opacity:0; transform:translateY(12px) } to { opacity:1; transform:translateY(0) } }
+@keyframes fadeIn   { from { opacity:0 } to { opacity:1 } }
+@keyframes spin     { to { transform: rotate(360deg) } }
+@keyframes pulse-ring { 0%,100% { box-shadow: 0 0 0 0 var(--accent-glow) } 50% { box-shadow: 0 0 0 8px transparent } }
+@keyframes shimmer  { 0% { background-position:200% 0 } 100% { background-position:-200% 0 } }
+@keyframes slideDown { from { opacity:0; transform:translateY(-8px) } to { opacity:1; transform:translateY(0) } }
+@keyframes toastIn  { from { opacity:0; transform:translateX(-50%) translateY(16px) } to { opacity:1; transform:translateX(-50%) translateY(0) } }
 
 .toast {
   position: fixed;
-  bottom: 88px; left: 50%;
+  bottom: 90px; left: 50%;
   transform: translateX(-50%);
-  background: rgba(7,9,18,0.94);
-  border: 1px solid rgba(0,212,255,0.25);
-  border-radius: 30px;
-  padding: 10px 20px;
+  background: rgba(15,20,35,0.96);
+  border: 1px solid var(--border-accent);
+  border-radius: 100px;
+  padding: 9px 20px;
   font-size: 0.82rem;
   color: var(--text);
   white-space: nowrap;
   z-index: 9999;
-  backdrop-filter: blur(16px);
+  backdrop-filter: blur(20px);
   display: none;
-  animation: toastIn 0.3s cubic-bezier(0.16,1,0.3,1);
-  box-shadow: 0 8px 30px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04) inset;
+  animation: toastIn 0.25s cubic-bezier(0.16,1,0.3,1);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  font-family: var(--font);
+  font-weight: 500;
+  letter-spacing: 0.01em;
 }
 .toast.show { display: block; }
 

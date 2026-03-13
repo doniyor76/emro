@@ -50,15 +50,15 @@ export default function MediaPage() {
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <div style={{ flex: 1, overflowY: 'auto', padding: '20px 20px 80px' }}>
         <div style={{ marginBottom: 20 }}>
-          <h2 style={{ fontSize: '1.4rem', fontFamily: 'var(--font-display)', fontWeight: 800, marginBottom: 14, background: 'linear-gradient(135deg,#fff,var(--cyan))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>🖼️ Rasmlar & Videolar</h2>
+          <h2 style={{ fontSize: '1.4rem', fontFamily: 'var(--font)', fontWeight: 800, marginBottom: 14, background: 'linear-gradient(135deg,#fff,var(--accent2))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>🖼️ Rasmlar & Videolar</h2>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             {FILTERS.map(f => (
-              <button key={f.id} onClick={() => setFilter(f.id)} style={{ padding: '6px 14px', borderRadius: 20, border: '1px solid', borderColor: filter === f.id ? 'var(--cyan)' : 'rgba(0,212,255,0.15)', background: filter === f.id ? 'rgba(0,212,255,0.12)' : 'transparent', color: filter === f.id ? 'var(--cyan)' : 'var(--text3)', fontSize: '0.78rem', fontWeight: filter === f.id ? 600 : 400, cursor: 'pointer' }}>{f.label}</button>
+              <button key={f.id} onClick={() => setFilter(f.id)} style={{ padding: '6px 14px', borderRadius: 20, border: '1px solid', borderColor: filter === f.id ? 'var(--accent2)' : 'rgba(59,130,246,0.15)', background: filter === f.id ? 'rgba(59,130,246,0.12)' : 'transparent', color: filter === f.id ? 'var(--accent2)' : 'var(--text3)', fontSize: '0.78rem', fontWeight: filter === f.id ? 600 : 400, cursor: 'pointer' }}>{f.label}</button>
             ))}
           </div>
         </div>
 
-        <div onClick={() => fileRef.current?.click()} style={{ border: '2px dashed rgba(0,212,255,0.2)', borderRadius: 16, padding: '24px', textAlign: 'center', cursor: 'pointer', marginBottom: 20, background: 'rgba(0,212,255,0.02)' }}>
+        <div onClick={() => fileRef.current?.click()} style={{ border: '2px dashed rgba(59,130,246,0.2)', borderRadius: 16, padding: '24px', textAlign: 'center', cursor: 'pointer', marginBottom: 20, background: 'rgba(59,130,246,0.02)' }}>
           <div style={{ fontSize: 32, marginBottom: 8 }}>☁️</div>
           <p style={{ fontSize: '0.88rem', color: 'var(--text2)', marginBottom: 4 }}>Rasm yoki video yuklash</p>
           <span style={{ fontSize: '0.72rem', color: 'var(--text3)' }}>Bosing — JPG, PNG, MP4 qabul qilinadi</span>

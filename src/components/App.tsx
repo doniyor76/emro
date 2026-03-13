@@ -49,7 +49,7 @@ export default function App() {
             <path d="M11 16l3.5 3.5L21 12" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </div>
-        <div style={{ fontFamily:'var(--font)', fontSize:'1.6rem', fontWeight:800, fontWeight:800, color:'var(--text)' }}>Emro</div>
+        <div style={{ fontFamily:'var(--font)', fontSize:'1.6rem', fontWeight:800, color:'var(--text)' }}>Emro</div>
         <div style={{ width:28, height:28, borderRadius:'50%', border:'2.5px solid rgba(59,130,246,0.15)', borderTopColor:'var(--accent2)', animation:'spin 0.8s linear infinite' }} />
         <style>{`@keyframes spin{to{transform:rotate(360deg)}}@keyframes pulse{0%,100%{box-shadow:0 0 48px rgba(59,130,246,0.35)}50%{box-shadow:0 0 72px rgba(96,165,250,0.6)}}`}</style>
       </div>

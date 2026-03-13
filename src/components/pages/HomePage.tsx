@@ -1,103 +1,186 @@
 'use client'
-// src/components/pages/HomePage.tsx — tozalangan, professional
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useAppStore } from '@/hooks/useAppStore'
 import { showToast } from '@/components/ui/Toast'
-import { pushNote, pushMedia, loadStats } from '@/lib/sync'
+import { pushNote, pushMedia } from '@/lib/sync'
 import { getStats } from '@/lib/storage'
 import { RIBBON_ITEMS } from '@/lib/data'
 
 interface Msg { type: 'ai' | 'user'; text: string }
 type Cat = 'ai' | 'note' | 'achievement' | 'skill' | 'plan'
 
+interface Memory {
+  id: string
+  label: string
+  emoji?: string
+  src?: string       // base64 rasm/video thumbnail
+  color: string
+  accent: string
+}
+
 const CATS: Array<{ id: Cat; label: string }> = [
-  { id: 'ai',          label: 'AI'       },
-  { id: 'note',        label: 'Eslatma'  },
-  { id: 'achievement', label: 'Yutuq'    },
-  { id: 'skill',       label: 'Skill'    },
-  { id: 'plan',        label: 'Reja'     },
+  { id: 'ai',          label: 'AI'      },
+  { id: 'note',        label: 'Eslatma' },
+  { id: 'achievement', label: 'Yutuq'   },
+  { id: 'skill',       label: 'Skill'   },
+  { id: 'plan',        label: 'Reja'    },
 ]
 
 const AI_REPLIES = [
   'Saqlandi. Keyinroq eslataman.',
-  'Xotiraga qo\'shildi.',
+  "Xotiraga qo'shildi.",
   'Tasnif qilindi va arxivlandi.',
   'Maqsad belgilandi. Kuzataman.',
-  'Portfolio\'ga qo\'shilsinmi? Aytasiz.',
+  "Portfolio'ga qo'shilsinmi? Aytasiz.",
 ]
 
 const PANELS = [
-  { id: 'notes',   icon: '✏️', label: 'Eslatmalar',  key: 'notes',  color: '#3b82f6' },
-  { id: 'library', icon: '📚', label: 'Arxiv',        key: 'total',  color: '#22d3ee' },
-  { id: 'media',   icon: '🖼', label: 'Media',        key: 'images', color: '#10b981' },
+  { id: 'notes',   icon: '✏️', label: 'Eslatmalar', key: 'notes',  color: '#3b82f6' },
+  { id: 'library', icon: '📚', label: 'Arxiv',       key: 'total',  color: '#22d3ee' },
+  { id: 'media',   icon: '🖼️', label: 'Media',       key: 'images', color: '#10b981' },
 ]
+
+// Seed memories from RIBBON_ITEMS
+const SEED_MEMORIES: Memory[] = RIBBON_ITEMS.map(r => ({
+  id: 'seed-' + r.label,
+  label: r.label,
+  emoji: r.emoji,
+  color: r.color,
+  accent: r.accent,
+}))
 
 export default function HomePage() {
   const { setActiveTab, stats, setStats } = useAppStore()
-  const [msgs, setMsgs] = useState<Msg[]>([
-    { type: 'ai', text: 'Salom! Xotira, eslatma yoki savol yozing.' }
-  ])
-  const [input, setInput]     = useState('')
-  const [cat, setCat]         = useState<Cat>('ai')
-  const [sending, setSending] = useState(false)
+
+  const [msgs, setMsgs]         = useState<Msg[]>([{ type:'ai', text:'Salom! Xotira, eslatma yoki savol yozing.' }])
+  const [input, setInput]       = useState('')
+  const [cat, setCat]           = useState<Cat>('ai')
+  const [sending, setSending]   = useState(false)
   const [chatFull, setChatFull] = useState(false)
+  const [memories, setMemories] = useState<Memory[]>(SEED_MEMORIES)
 
-  const chatRef    = useRef<HTMLDivElement>(null)
-  const taRef      = useRef<HTMLTextAreaElement>(null)
-  const trackRef   = useRef<HTMLDivElement>(null)
-  const animRef    = useRef(0)
-  const posRef     = useRef(0)
-  const pausedRef  = useRef(false)
-  const fileRef    = useRef<HTMLInputElement>(null)
-  const ribbonFileRef = useRef<HTMLInputElement>(null)
-
-  // User uploaded ribbon items (rasmlari)
-  const [userMemories, setUserMemories] = useState<Array<{ id: string; label: string; src: string; color: string }>>([])
-
-  const ribbonItems = [...RIBBON_ITEMS, ...RIBBON_ITEMS]
+  const chatRef       = useRef<HTMLDivElement>(null)
+  const taRef         = useRef<HTMLTextAreaElement>(null)
+  const trackRef      = useRef<HTMLDivElement>(null)
+  const animRef       = useRef(0)
+  const posRef        = useRef(0)
+  const pausedRef     = useRef(false)
+  const fileRef       = useRef<HTMLInputElement>(null)
+  const memFileRef    = useRef<HTMLInputElement>(null)
 
   useEffect(() => { setStats(getStats()) }, [setStats])
 
-  // Ribbon: uzluksiz scroll, hover da to'xtash
+  // ── Uzluksiz ribbon scroll ──────────────────────────────────────────────────
   useEffect(() => {
+    cancelAnimationFrame(animRef.current)
+    posRef.current = 0
+
     const track = trackRef.current
     if (!track) return
-    let speed = 0.6
 
-    const tick = () => {
-      if (!pausedRef.current) {
-        posRef.current += speed
-        const half = track.scrollWidth / 2
-        if (posRef.current >= half) posRef.current -= half
-        track.style.transform = `translateX(-${posRef.current.toFixed(2)}px)`
+    // Kutib turish — DOM renderdan keyin o'lcham aniq bo'ladi
+    const start = () => {
+      const tick = () => {
+        if (!pausedRef.current) {
+          posRef.current += 0.55
+          // Yarmi = bitta set kengligi — shu yerga yetganda boshiga qayt
+          const half = track.scrollWidth / 2
+          if (half > 0 && posRef.current >= half) posRef.current -= half
+          track.style.transform = `translateX(-${posRef.current.toFixed(2)}px)`
+        }
+        animRef.current = requestAnimationFrame(tick)
       }
       animRef.current = requestAnimationFrame(tick)
     }
-    animRef.current = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(animRef.current)
-  }, [userMemories])
 
-  function handleRibbonUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    // 100ms kuting — memories o'zgarganda DOM qayta render bo'ladi
+    const t = setTimeout(start, 100)
+    return () => { clearTimeout(t); cancelAnimationFrame(animRef.current) }
+  }, [memories])
+
+  // ── Xotiraga rasm/video qo'shish ────────────────────────────────────────────
+  function handleMemoryUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.target.files
     if (!files?.length) return
     e.target.value = ''
+
     Array.from(files).forEach(file => {
-      const reader = new FileReader()
-      reader.onload = ev => {
-        const src = ev.target?.result as string
-        const label = file.name.replace(/\.[^.]+$/, '').slice(0, 18)
-        setUserMemories(prev => [...prev, {
-          id: Date.now().toString() + Math.random(),
+      const isVideo = file.type.startsWith('video/')
+      const label   = file.name.replace(/\.[^.]+$/, '').slice(0, 20)
+
+      const readAndAdd = (src: string) => {
+        const newMem: Memory = {
+          id:     Date.now().toString() + Math.random(),
           label,
           src,
-          color: ['#1a2a5c','#1a0f2e','#0a1f30','#1a100f','#0f2a1a'][Math.floor(Math.random()*5)]
-        }])
-        showToast('Xotiraga qo\'shildi!')
+          color:  '#0c1220',
+          accent: '#3b82f6',
+        }
+        setMemories(prev => [newMem, ...prev])
+        // Media sahifasiga ham qo'shish
+        pushMedia({
+          id:    newMem.id,
+          emoji: isVideo ? '🎬' : '🖼️',
+          title: label,
+          date:  new Date().toLocaleDateString('uz'),
+          type:  isVideo ? 'video' : 'rasm',
+          color: '#111827',
+        })
+        setStats(getStats())
+        showToast(`"${label}" qo'shildi`)
       }
-      reader.readAsDataURL(file)
+
+      if (isVideo) {
+        // Video uchun thumbnail yasash
+        const url    = URL.createObjectURL(file)
+        const video  = document.createElement('video')
+        video.src    = url
+        video.currentTime = 0.5
+        video.muted  = true
+        video.playsInline = true
+        video.onloadeddata = () => {
+          const canvas  = document.createElement('canvas')
+          canvas.width  = 200
+          canvas.height = 300
+          const ctx = canvas.getContext('2d')!
+          // Letter-box / crop
+          const vr = video.videoWidth  / video.videoHeight
+          const cr = canvas.width / canvas.height
+          let sx=0, sy=0, sw=video.videoWidth, sh=video.videoHeight
+          if (vr > cr) { sw = sh * cr; sx = (video.videoWidth - sw)/2 }
+          else         { sh = sw / cr; sy = (video.videoHeight - sh)/2 }
+          ctx.drawImage(video, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height)
+          readAndAdd(canvas.toDataURL('image/jpeg', 0.7))
+          URL.revokeObjectURL(url)
+        }
+        video.onerror = () => { readAndAdd(''); URL.revokeObjectURL(url) }
+      } else {
+        // Rasm uchun FileReader + canvas crop
+        const reader = new FileReader()
+        reader.onload = ev => {
+          const src = ev.target?.result as string
+          const img = new Image()
+          img.onload = () => {
+            const canvas  = document.createElement('canvas')
+            canvas.width  = 200
+            canvas.height = 300
+            const ctx = canvas.getContext('2d')!
+            const ir = img.width / img.height
+            const cr = canvas.width / canvas.height
+            let sx=0, sy=0, sw=img.width, sh=img.height
+            if (ir > cr) { sw = sh * cr; sx = (img.width - sw)/2 }
+            else         { sh = sw / cr; sy = (img.height - sh)/2 }
+            ctx.drawImage(img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height)
+            readAndAdd(canvas.toDataURL('image/jpeg', 0.75))
+          }
+          img.src = src
+        }
+        reader.readAsDataURL(file)
+      }
     })
   }
 
+  // ── Chat ────────────────────────────────────────────────────────────────────
   useEffect(() => {
     if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight
   }, [msgs])
@@ -115,16 +198,16 @@ export default function HomePage() {
     setInput('')
     if (taRef.current) taRef.current.style.height = 'auto'
     setChatFull(true)
-    setMsgs(p => [...p, { type: 'user', text }])
+    setMsgs(p => [...p, { type:'user', text }])
     setSending(true)
     if (cat === 'note' || cat === 'ai') {
-      pushNote({ id: Date.now().toString(), title: text.slice(0,60), pre: text.slice(0,80), tag: 'Eslatma', date: 'Hozir', content: text })
+      pushNote({ id: Date.now().toString(), title: text.slice(0,60), pre: text.slice(0,80), tag:'Eslatma', date:'Hozir', content: text })
     }
     setStats(getStats())
     setTimeout(() => {
-      setMsgs(p => [...p, { type: 'ai', text: AI_REPLIES[Math.floor(Math.random() * AI_REPLIES.length)] }])
+      setMsgs(p => [...p, { type:'ai', text: AI_REPLIES[Math.floor(Math.random() * AI_REPLIES.length)] }])
       setSending(false)
-    }, 600 + Math.random() * 600)
+    }, 500 + Math.random() * 600)
   }
 
   function onKey(e: React.KeyboardEvent) {
@@ -132,64 +215,63 @@ export default function HomePage() {
   }
 
   function onFiles(e: React.ChangeEvent<HTMLInputElement>) {
+    // Chat papka (+) orqali media qo'shish
     const files = e.target.files
     if (!files?.length) return
     e.target.value = ''
-    Array.from(files).forEach(file => {
-      pushMedia({ id: Date.now().toString()+Math.random(), emoji: file.type.startsWith('video') ? '🎬' : '🖼', title: file.name, date: new Date().toLocaleDateString(), type: file.type.startsWith('video') ? 'video' : 'rasm', color: '#111827' })
-    })
-    setStats(getStats())
-    showToast(`${files.length} ta fayl saqlandi`)
+    // Ribbon ga ham qo'shish uchun handleMemoryUpload ni qayta ishlatamiz
+    const dt = new DataTransfer()
+    Array.from(files).forEach(f => dt.items.add(f))
+    const fakeEvt = { target: { files: dt.files, value:'' }, currentTarget: {} } as any
+    handleMemoryUpload(fakeEvt)
   }
 
-  // ── Shared input bar ──
-  const InputBar = (
-    <div style={{ padding:'8px 12px 10px', background:'var(--bg)', borderTop:'1px solid var(--border)', flexShrink:0 }}>
-      {/* Category pills */}
-      <div style={{ display:'flex', gap:5, marginBottom:8, overflowX:'auto', scrollbarWidth:'none' }}>
-        {CATS.map(c => (
-          <button key={c.id} onClick={() => setCat(c.id)} style={{
-            padding:'4px 12px', borderRadius:20, flexShrink:0,
-            border:'1px solid ' + (cat===c.id ? 'var(--accent)' : 'var(--border)'),
-            background: cat===c.id ? 'rgba(59,130,246,0.12)' : 'transparent',
-            color: cat===c.id ? 'var(--accent2)' : 'var(--text3)',
-            fontSize:'0.72rem', fontWeight: cat===c.id ? 600 : 400,
-            cursor:'pointer', fontFamily:'var(--font)',
-          }}>{c.label}</button>
-        ))}
+  // ── Ribbon karta komponenti ────────────────────────────────────────────────
+  const MemCard = ({ m }: { m: Memory }) => (
+    <div
+      style={{ flexShrink:0, cursor:'pointer', userSelect:'none' }}
+      onClick={() => showToast(m.label)}
+      onMouseEnter={() => { pausedRef.current = true }}
+      onMouseLeave={() => { pausedRef.current = false }}
+      onTouchStart={() => { pausedRef.current = true }}
+      onTouchEnd={() => { setTimeout(() => { pausedRef.current = false }, 1500) }}
+    >
+      <div style={{
+        width: 76, height: 104,
+        borderRadius: 16,
+        overflow: 'hidden',
+        border: '1px solid rgba(255,255,255,0.08)',
+        position: 'relative',
+        background: m.src ? '#000' : `linear-gradient(155deg, ${m.color}, #05080f)`,
+        boxShadow: '0 2px 12px rgba(0,0,0,0.4)',
+        transition: 'transform 0.18s ease, box-shadow 0.18s ease',
+      }}
+        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform='scale(1.06)'; (e.currentTarget as HTMLElement).style.boxShadow='0 6px 24px rgba(0,0,0,0.6)' }}
+        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform='scale(1)'; (e.currentTarget as HTMLElement).style.boxShadow='0 2px 12px rgba(0,0,0,0.4)' }}
+      >
+        {m.src ? (
+          <>
+            <img src={m.src} alt={m.label} style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }} />
+            <div style={{ position:'absolute', inset:0, background:'linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 55%)' }} />
+          </>
+        ) : (
+          <div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', fontSize: 34 }}>
+            {m.emoji}
+          </div>
+        )}
       </div>
-      {/* Textarea row */}
-      <div style={{ display:'flex', alignItems:'flex-end', gap:8 }}>
-        <button onClick={() => fileRef.current?.click()} style={{
-          width:38, height:38, borderRadius:10, flexShrink:0,
-          background:'var(--card)', border:'1px solid var(--border)',
-          cursor:'pointer', display:'grid', placeItems:'center', color:'var(--text2)',
-        }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        </button>
-        <div style={{ flex:1, display:'flex', alignItems:'flex-end', background:'var(--card)', border:'1px solid var(--border)', borderRadius:12, padding:'6px 6px 6px 12px' }}>
-          <textarea
-            ref={taRef} value={input}
-            onChange={e => { setInput(e.target.value); resizeTa() }}
-            onKeyDown={onKey}
-            placeholder={chatFull ? 'Davom eting...' : 'Xotira, eslatma yoki savol yozing...'}
-            rows={1}
-            style={{ flex:1, background:'transparent', border:'none', outline:'none', color:'var(--text)', fontSize:'0.88rem', fontFamily:'var(--font)', resize:'none', lineHeight:1.5, maxHeight:80, overflowY:'auto', padding:'2px 6px 2px 0' }}
-          />
-          <button onClick={send} disabled={!input.trim()} style={{
-            width:32, height:32, borderRadius:8, flexShrink:0,
-            background: input.trim() ? 'var(--accent)' : 'var(--card2)',
-            border:'none', cursor: input.trim() ? 'pointer' : 'default',
-            display:'grid', placeItems:'center',
-            transition:'background 0.15s',
-          }}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22,2 15,22 11,13 2,9"/></svg>
-          </button>
-        </div>
+      <div style={{
+        fontSize: '0.6rem', color: 'rgba(255,255,255,0.55)',
+        textAlign: 'center', marginTop: 6,
+        width: 76, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
+        fontWeight: 500, letterSpacing: '0.01em',
+      }}>
+        {m.label}
       </div>
     </div>
   )
 
+  // ── Chat bubbles ────────────────────────────────────────────────────────────
   const Bubbles = () => (
     <>
       {msgs.map((m, i) => (
@@ -214,18 +296,65 @@ export default function HomePage() {
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
           </div>
           <div style={{ padding:'8px 14px', borderRadius:'3px 12px 12px 12px', background:'var(--card)', border:'1px solid var(--border)', display:'flex', gap:4, alignItems:'center' }}>
-            {[0,0.2,0.4].map((d,i) => <span key={i} style={{ width:5, height:5, borderRadius:'50%', background:'var(--text3)', display:'inline-block', animation:`dot 1s ${d}s ease-in-out infinite` }}/>)}
+            {[0, 0.2, 0.4].map((d,i) => (
+              <span key={i} style={{ width:5, height:5, borderRadius:'50%', background:'var(--text3)', display:'inline-block', animation:`dot 1s ${d}s ease-in-out infinite` }}/>
+            ))}
           </div>
         </div>
       )}
     </>
   )
 
-  // Full chat view
+  // ── Input bar ──────────────────────────────────────────────────────────────
+  const InputBar = (
+    <div style={{ padding:'8px 12px 10px', background:'var(--bg)', borderTop:'1px solid var(--border)', flexShrink:0 }}>
+      <div style={{ display:'flex', gap:5, marginBottom:8, overflowX:'auto', scrollbarWidth:'none' }}>
+        {CATS.map(c => (
+          <button key={c.id} onClick={() => setCat(c.id)} style={{
+            padding:'4px 12px', borderRadius:20, flexShrink:0,
+            border:'1px solid ' + (cat===c.id ? 'var(--accent)' : 'var(--border)'),
+            background: cat===c.id ? 'rgba(59,130,246,0.12)' : 'transparent',
+            color: cat===c.id ? 'var(--accent2)' : 'var(--text3)',
+            fontSize:'0.72rem', fontWeight: cat===c.id ? 600 : 400,
+            cursor:'pointer', fontFamily:'var(--font)',
+          }}>{c.label}</button>
+        ))}
+      </div>
+      <div style={{ display:'flex', alignItems:'flex-end', gap:8 }}>
+        <button onClick={() => fileRef.current?.click()} style={{
+          width:38, height:38, borderRadius:10, flexShrink:0,
+          background:'var(--card)', border:'1px solid var(--border)',
+          cursor:'pointer', display:'grid', placeItems:'center', color:'var(--text2)',
+        }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+        <div style={{ flex:1, display:'flex', alignItems:'flex-end', background:'var(--card)', border:'1px solid var(--border)', borderRadius:12, padding:'6px 6px 6px 12px' }}>
+          <textarea
+            ref={taRef} value={input}
+            onChange={e => { setInput(e.target.value); resizeTa() }}
+            onKeyDown={onKey}
+            placeholder={chatFull ? 'Davom eting...' : 'Xotira, eslatma yoki savol yozing...'}
+            rows={1}
+            style={{ flex:1, background:'transparent', border:'none', outline:'none', color:'var(--text)', fontSize:'0.88rem', fontFamily:'var(--font)', resize:'none', lineHeight:1.5, maxHeight:80, overflowY:'auto', padding:'2px 6px 2px 0' }}
+          />
+          <button onClick={send} disabled={!input.trim()} style={{
+            width:32, height:32, borderRadius:8, flexShrink:0,
+            background: input.trim() ? 'var(--accent)' : 'var(--card2)',
+            border:'none', cursor: input.trim() ? 'pointer' : 'default',
+            display:'grid', placeItems:'center', transition:'background 0.15s',
+          }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22,2 15,22 11,13 2,9"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+
+  // ── Full chat view ─────────────────────────────────────────────────────────
   if (chatFull) {
     return (
       <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden', background:'var(--bg)' }}>
-        <div style={{ height:48, flexShrink:0, display:'flex', alignItems:'center', gap:10, padding:'0 14px', borderBottom:'1px solid var(--border)', background:'var(--bg)' }}>
+        <div style={{ height:48, flexShrink:0, display:'flex', alignItems:'center', gap:10, padding:'0 14px', borderBottom:'1px solid var(--border)' }}>
           <button onClick={() => setChatFull(false)} style={{ width:32, height:32, borderRadius:9, background:'var(--card)', border:'1px solid var(--border)', display:'grid', placeItems:'center', cursor:'pointer', color:'var(--text2)', flexShrink:0 }}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15,18 9,12 15,6"/></svg>
           </button>
@@ -243,87 +372,61 @@ export default function HomePage() {
           <Bubbles />
         </div>
         {InputBar}
-        <input ref={fileRef} type="file" multiple accept="image/*,video/*" onChange={onFiles} style={{ display:'none' }} />
+        <input ref={fileRef} type="file" multiple accept="image/*,video/*,audio/*" onChange={onFiles} style={{ display:'none' }} />
         <style>{`@keyframes dot{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-4px);opacity:1}}`}</style>
       </div>
     )
   }
 
-  // Home view
+  // ── Home view ──────────────────────────────────────────────────────────────
+  const doubled = [...memories, ...memories]
+
   return (
     <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden', background:'var(--bg)' }}>
 
-      {/* Ribbon */}
-      <div style={{ flexShrink:0, padding:'12px 0 8px' }}>
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 16px', marginBottom:10 }}>
-          <span style={{ fontSize:'0.6rem', color:'var(--text3)', letterSpacing:'0.14em', textTransform:'uppercase', fontFamily:'var(--font-mono)' }}>
-            Xotiralar
-          </span>
-          <button
-            onClick={() => ribbonFileRef.current?.click()}
-            style={{ display:'flex', alignItems:'center', gap:5, padding:'4px 10px', borderRadius:20, background:'rgba(59,130,246,0.08)', border:'1px solid var(--border-accent)', cursor:'pointer', fontSize:'0.68rem', color:'var(--accent2)', fontFamily:'var(--font)', fontWeight:500 }}>
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Rasm qo'shish
-          </button>
-          <input ref={ribbonFileRef} type="file" accept="image/*,video/*" multiple onChange={handleRibbonUpload} style={{ display:'none' }} />
-        </div>
+      {/* Ribbon header */}
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'14px 16px 10px', flexShrink:0 }}>
+        <span style={{ fontSize:'0.58rem', color:'var(--text3)', letterSpacing:'0.16em', textTransform:'uppercase', fontFamily:'var(--font-mono)' }}>
+          Xotiralar
+        </span>
+        <button
+          onClick={() => memFileRef.current?.click()}
+          style={{ display:'flex', alignItems:'center', gap:5, padding:'5px 12px', borderRadius:20, background:'rgba(59,130,246,0.08)', border:'1px solid rgba(59,130,246,0.2)', cursor:'pointer', fontSize:'0.7rem', color:'var(--accent2)', fontFamily:'var(--font)', fontWeight:500, whiteSpace:'nowrap' }}
+        >
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Qo'shish
+        </button>
+        <input ref={memFileRef} type="file" accept="image/*,video/*" multiple onChange={handleMemoryUpload} style={{ display:'none' }} />
+      </div>
 
-        <div style={{ position:'relative', overflow:'hidden' }}>
-          {/* Edge fades */}
-          <div style={{ position:'absolute', left:0, top:0, bottom:0, width:32, background:'linear-gradient(90deg,var(--bg),transparent)', zIndex:2, pointerEvents:'none' }} />
-          <div style={{ position:'absolute', right:0, top:0, bottom:0, width:32, background:'linear-gradient(-90deg,var(--bg),transparent)', zIndex:2, pointerEvents:'none' }} />
+      {/* Ribbon scroll */}
+      <div style={{ flexShrink:0, position:'relative', overflow:'hidden', paddingBottom:4 }}>
+        {/* Edge fades */}
+        <div style={{ position:'absolute', left:0, top:0, bottom:0, width:28, background:'linear-gradient(90deg,var(--bg),transparent)', zIndex:3, pointerEvents:'none' }} />
+        <div style={{ position:'absolute', right:0, top:0, bottom:0, width:28, background:'linear-gradient(-90deg,var(--bg),transparent)', zIndex:3, pointerEvents:'none' }} />
 
-          <div style={{ paddingLeft:16, paddingRight:16 }}>
-            <div
-              ref={trackRef}
-              style={{ display:'flex', gap:10, width:'max-content', willChange:'transform' }}
-              onMouseEnter={() => { pausedRef.current = true }}
-              onMouseLeave={() => { pausedRef.current = false }}
-              onTouchStart={() => { pausedRef.current = true }}
-              onTouchEnd={() => { setTimeout(() => { pausedRef.current = false }, 1200) }}
-            >
-              {/* User uploaded memories first */}
-              {[...userMemories, ...userMemories].map((m, i) => (
-                <div key={'u'+i} style={{ flexShrink:0, cursor:'pointer' }} onClick={() => showToast(m.label)}>
-                  <div style={{ width:72, height:96, borderRadius:14, overflow:'hidden', border:'1px solid var(--border)', position:'relative', background:'#080c14' }}>
-                    <img src={m.src} alt={m.label} style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }} />
-                    <div style={{ position:'absolute', inset:0, background:'linear-gradient(to top,rgba(0,0,0,0.5) 0%,transparent 60%)' }} />
-                  </div>
-                  <div style={{ fontSize:'0.6rem', color:'var(--text2)', textAlign:'center', marginTop:5, width:72, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', fontWeight:500 }}>{m.label}</div>
-                </div>
-              ))}
-
-              {/* Default ribbon items */}
-              {ribbonItems.map((m, i) => (
-                <div key={'d'+i} onClick={() => showToast(m.label)} style={{ flexShrink:0, cursor:'pointer' }}
-                  onMouseEnter={e => { (e.currentTarget.firstChild as HTMLElement).style.transform = 'scale(1.04)' }}
-                  onMouseLeave={e => { (e.currentTarget.firstChild as HTMLElement).style.transform = 'scale(1)' }}>
-                  <div style={{ width:72, height:96, borderRadius:14, background:`linear-gradient(160deg,${m.color},#080c14)`, border:'1px solid var(--border)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:30, transition:'transform 0.2s ease', flexShrink:0 }}>
-                    {m.emoji}
-                  </div>
-                  <div style={{ fontSize:'0.6rem', color:'var(--text2)', textAlign:'center', marginTop:5, width:72, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', fontWeight:500 }}>{m.label}</div>
-                </div>
-              ))}
-            </div>
+        <div style={{ paddingLeft:12, paddingRight:12 }}>
+          <div ref={trackRef} style={{ display:'flex', gap:10, width:'max-content', willChange:'transform' }}>
+            {doubled.map((m, i) => <MemCard key={i} m={m} />)}
           </div>
         </div>
       </div>
 
       {/* Panels */}
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, padding:'4px 12px 8px', flexShrink:0 }}>
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, padding:'10px 12px 8px', flexShrink:0 }}>
         {PANELS.map(p => (
           <button key={p.id} onClick={() => setActiveTab(p.id as any)} style={{
-            borderRadius:14, padding:'14px 12px',
+            borderRadius:14, padding:'14px 10px',
             background:'var(--card)', border:'1px solid var(--border)',
             cursor:'pointer', textAlign:'left', display:'flex', flexDirection:'column', gap:8,
             transition:'border-color 0.15s',
           }}
-          onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--border-accent)')}
+          onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(59,130,246,0.3)')}
           onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}>
-            <div style={{ width:32, height:32, borderRadius:9, background: p.color+'18', display:'grid', placeItems:'center', fontSize:15 }}>{p.icon}</div>
+            <div style={{ width:34, height:34, borderRadius:10, background: p.color+'18', display:'grid', placeItems:'center', fontSize:16 }}>{p.icon}</div>
             <div>
-              <div style={{ fontSize:'0.78rem', fontWeight:600, color:'var(--text)', marginBottom:2 }}>{p.label}</div>
-              <div style={{ fontSize:'0.7rem', color:p.color, fontWeight:600, fontFamily:'var(--font-mono)' }}>{(stats as any)[p.key] || 0}</div>
+              <div style={{ fontSize:'0.8rem', fontWeight:600, color:'var(--text)', marginBottom:2 }}>{p.label}</div>
+              <div style={{ fontSize:'0.72rem', color:p.color, fontWeight:600, fontFamily:'var(--font-mono)' }}>{(stats as any)[p.key] ?? 0}</div>
             </div>
           </button>
         ))}
@@ -347,7 +450,7 @@ export default function HomePage() {
       </div>
 
       {InputBar}
-      <input ref={fileRef} type="file" multiple accept="image/*,video/*" onChange={onFiles} style={{ display:'none' }} />
+      <input ref={fileRef} type="file" multiple accept="image/*,video/*,audio/*" onChange={onFiles} style={{ display:'none' }} />
       <style>{`@keyframes dot{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-4px);opacity:1}}`}</style>
     </div>
   )
